@@ -9,6 +9,12 @@ def main():
     parser = argparse.ArgumentParser(description="QSAR/QSPR Multi-Agent System")
     parser.add_argument('--data', type=str, required=True, help='Path to the input CSV file')
     parser.add_argument('--target', type=str, required=True, help='Name of the target column')
+
+    # New arguments
+    parser.add_argument('--descriptors', type=str, choices=['basic', 'fingerprints'], default='basic', help='Type of descriptors to calculate')
+    parser.add_argument('--model', type=str, choices=['rf', 'gb', 'svr'], default='rf', help='Type of model to use')
+    parser.add_argument('--tune', action='store_true', help='Enable hyperparameter tuning')
+
     args = parser.parse_args()
 
     # 1. Data Ingestion
@@ -21,15 +27,15 @@ def main():
     # 2. Preprocessing
     print("\n--- Starting Preprocessing ---")
     preprocessing_agent = PreprocessingAgent()
-    df_processed = preprocessing_agent.calculate_descriptors(df)
+    df_processed = preprocessing_agent.calculate_descriptors(df, descriptor_type=args.descriptors)
     df_clean = preprocessing_agent.clean_data(df_processed)
     print(f"Data processed. Shape: {df_clean.shape}")
     print(df_clean.head())
 
     # 3. Model Building
-    print("\n--- Starting Model Building ---")
-    model_agent = ModelBuilderAgent(target_col=args.target)
-    model, X_test, y_test = model_agent.train_model(df_clean)
+    print(f"\n--- Starting Model Building ({args.model.upper()}) ---")
+    model_agent = ModelBuilderAgent(target_col=args.target, model_type=args.model)
+    model, X_test, y_test = model_agent.train_model(df_clean, tune=args.tune)
 
     # 4. Evaluation
     print("\n--- Starting Evaluation ---")
